@@ -1,0 +1,26 @@
+name: Build cheapino firmware
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/qmk/qmk_cli:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone cheapino QMK tree
+        run: |
+          git clone --depth 1 -b cheapinov2 https://github.com/tompi/qmk_firmware /qmk
+          cd /qmk
+          git submodule update --init --depth 1 lib/chibios lib/chibios-contrib lib/pico-sdk lib/printf
+      - name: Fix v2 board debounce call for current QMK API
+        run: sed -i 's/debounce_init(MATRIX_ROWS);/debounce_init();/' /qmk/keyboards/cheapino/matrix.c
+      - name: Insert keymap
+        run: cp -r keymaps/john /qmk/keyboards/cheapino/keymaps/john
+      - name: Compile
+        run: |
+          cd /qmk
+          qmk config user.qmk_home=/qmk
+          make cheapino:john
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cheapino_john_uf2
+          path: /qmk/cheapino_john.uf2
