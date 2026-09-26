@@ -24,3 +24,17 @@ jobs:
         with:
           name: cheapino_john_uf2
           path: /qmk/cheapino_john.uf2
+  sync-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch sibling repos
+        run: |
+          git clone --depth 1 https://github.com/johncattrall/zmk-config-crosses-bridges /tmp/crosses
+          git clone --depth 1 https://github.com/johncattrall/keymap-ai /tmp/kai
+          pip install pyyaml
+      - name: Layout drift check against the Crosses
+        run: |
+          python3 /tmp/kai/skills/keymap-ai/scripts/sync_keymaps.py \
+            --zmk /tmp/crosses/config/crosses.keymap \
+            --qmk keymaps/john/keymap.c --config sync.yaml
